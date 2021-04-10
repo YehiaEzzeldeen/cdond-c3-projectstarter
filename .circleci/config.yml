@@ -127,7 +127,6 @@ jobs:
       - run:
           name: Ensure back-end infrastructure exists
           command: |
-            yum -y install tar gzip
             aws cloudformation deploy \
               --template-file .circleci/files/backend.yml \
               --tags project=Udapeople \
@@ -137,7 +136,6 @@ jobs:
       - run:
           name: Ensure front-end infrastructure exist
           command: |
-            yum -y install tar gzip
             aws cloudformation deploy \
               --template-file .circleci/files/frontend.yml \
               --tags project=Udapeople \
@@ -147,7 +145,6 @@ jobs:
       - run:
           name: Add back-end ip to ansible inventory
           command: |
-            yum -y install tar gzip
             aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --filters "Name=tag:project,Values=Udapeople" \
@@ -155,7 +152,6 @@ jobs:
             cat .circleci/ansible/inventory.txt
             
       - persist_to_workspace:
-          run: yum -y install tar gzip
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
