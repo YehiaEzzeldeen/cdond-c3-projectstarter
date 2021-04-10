@@ -121,7 +121,7 @@ jobs:
             npm audit fix --audit-level=critical --force
   deploy-infrastructure:
     docker:
-      - image: amazon/aws-cli
+      - image: cimg/base:2020.01
     steps:
       - checkout
       - run:
