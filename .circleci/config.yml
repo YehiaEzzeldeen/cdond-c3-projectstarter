@@ -21,7 +21,6 @@ commands:
     steps:
       - run:
           name: Revert migrations
-          # Add when this will run
           command: |
             SUCCESS=$(curl -H "token: migration_${CIRCLE_WORKFLOW_ID:0:7}" --request GET https://api.memstash.io/values/migration)
             if(( $SUCCESS==1 )); 
@@ -194,6 +193,45 @@ jobs:
             ANSIBLE_HOST_KEY_CHECKING: false
       - destroy-environment:
           WorkflowID: "${CIRCLE_WORKFLOW_ID:0:7}"
+  run-migrations:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+  
+      - run:
+          name: Install AWS-CLI
+          command: |
+            sudo apt-get -y -qq update
+            sudo apt-get -y -qq install python3
+            sudo apt-get -qq install awscli
+
+      - run:
+          name: Run migrations
+          command: |
+            cd backend
+            npm install
+            npm run migrations > migration_${CIRCLE_WORKFLOW_ID:0:7}.txt
+            cat migration_${CIRCLE_WORKFLOW_ID:0:7}.txt
+
+      - run:
+          name: Send migration results to memstash
+          command: |
+            cd backend
+            cat migration_${CIRCLE_WORKFLOW_ID:0:7}.txt
+            if grep -q "has been executed successfully" migration_${CIRCLE_WORKFLOW_ID:0:7}.txt
+            then
+              result=1
+            fi
+            curl -H "Content-Type: text/plain" \
+            -H "token: migration_${CIRCLE_WORKFLOW_ID:0:7}" \
+            --request PUT \
+            --data ${result} https://api.memstash.io/values/migration
+            
+            echo ${result}
+      - destroy-environment:
+          WorkflowID: "${CIRCLE_WORKFLOW_ID:0:7}" 
+      - revert-migrations             
 workflows:
   default:
     jobs:
@@ -214,8 +252,8 @@ workflows:
               only: [ master ]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
-      #- run-migrations:
-          #requires: [configure-infrastructure]
+      - run-migrations:
+          requires: [configure-infrastructure]
       #- deploy-frontend:
           #requires: [run-migrations]
       #- deploy-backend:
