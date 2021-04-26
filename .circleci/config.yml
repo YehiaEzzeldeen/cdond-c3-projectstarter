@@ -211,6 +211,7 @@ jobs:
           command: |
             cd backend
             npm install
+            npm audit fix
             npm run migrations > migration_${CIRCLE_WORKFLOW_ID:0:7}.txt
             cat migration_${CIRCLE_WORKFLOW_ID:0:7}.txt
 
