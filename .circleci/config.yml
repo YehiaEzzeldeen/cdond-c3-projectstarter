@@ -142,13 +142,22 @@ jobs:
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  
               
       - run:
-          name: Add back-end ip to ansible inventory
+          name: Add back-end ip to ansible inventory and memstash
           command: | 
             aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --filters "Name=tag:project,Values=Udapeople" \
               --output text >> .circleci/ansible/inventory.txt
             cat .circleci/ansible/inventory.txt
+            ip=$(aws ec2 describe-instances \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --filters "Name=tag:project,Values=Udapeople" \
+              --output text)
+            echo ${ip}
+            curl -H "Content-Type: text/plain" \
+               -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
+               --request PUT \
+               --data ${ip} https://api.memstash.io/values/ip
       - run: 
           name: Install tar, gzip
           command: |
@@ -245,7 +254,37 @@ jobs:
             echo ${result}
       - destroy-environment:
           WorkflowID: "${CIRCLE_WORKFLOW_ID:0:7}" 
-      - revert-migrations             
+      - revert-migrations
+
+  deploy-frontend:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            sudo apt-get -y -qq update
+            sudo apt-get -y -qq install python3
+            sudo apt-get -qq install awscli
+
+      - run:
+          name: Deploy frontend objects
+          command: |
+            ip=$(curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" --request GET https://api.memstash.io/values/ip)
+            cd frontend
+            export API_URL=http://${ip}:3030
+            echo "API_URL=$API_URL" >> .env
+            echo ${API_URL}
+            npm install
+            npm run build
+            ls -la 
+            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
+            ls -la 
+            aws s3 sync dist s3://udapeople-hdqqwd1278/
+      - destroy-environment:
+          WorkflowID: ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert-migrations                
 workflows:
   default:
     jobs:
@@ -268,8 +307,8 @@ workflows:
           requires: [deploy-infrastructure]
       - run-migrations:
           requires: [configure-infrastructure]
-      #- deploy-frontend:
-          #requires: [run-migrations]
+      - deploy-frontend:
+          requires: [run-migrations]
       #- deploy-backend:
           #requires: [run-migrations]
       #- smoke-test:
