@@ -224,8 +224,7 @@ jobs:
             cd backend
             npm install
             npm run build
-            npm audit fix --audit-level=critical --force
-             sudo npm i -g pm2
+            sudo npm i -g pm2
             npm run migrations > migration_${CIRCLE_WORKFLOW_ID:0:7}.txt
             cat migration_${CIRCLE_WORKFLOW_ID:0:7}.txt
 
