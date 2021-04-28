@@ -21,3 +21,4 @@
     - TYPEORM_MIGRATIONS_DIR: ./src/migrations
   roles:
     - deploy
+    - configure-prometheus-node-exporter
