@@ -383,7 +383,7 @@ jobs:
                 --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID}" 
      
       - destroy-environment:
-          workflowId: "${CIRCLE_WORKFLOW_ID}"
+          WorkflowID: ${CIRCLE_WORKFLOW_ID:0:7}
       - revert-migrations
 
   cleanup:
@@ -421,7 +421,7 @@ jobs:
                echo "SAME"
               fi
         - destroy-environment:
-            workflowId: "${CIRCLE_WORKFLOW_ID}"
+            WorkflowID: ${CIRCLE_WORKFLOW_ID:0:7}
         - revert-migrations
                      
 workflows:
