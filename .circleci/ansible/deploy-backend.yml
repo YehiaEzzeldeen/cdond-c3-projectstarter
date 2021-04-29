@@ -19,6 +19,7 @@
     - TYPEORM_DATABASE: "{{ lookup('env','TYPEORM_DATABASE') }}"
     - TYPEORM_MIGRATIONS: .src/migrations/*.ts
     - TYPEORM_MIGRATIONS_DIR: ./src/migrations
+    
   roles:
     - deploy
     - configure-prometheus-node-exporter
